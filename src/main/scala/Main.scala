@@ -12,55 +12,74 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import org.apache.commons.validator.routines.UrlValidator
+
 object Main extends App {
-  val endpoint = Get / ("hello" | "hi") / string /> hello
-  val title = paramOption("title").withDefault("")
+  val baseDomain = "http://ec2-54-165-63-62.compute-1.amazonaws.com:8081/"
 
-  def hello(name: String) = new Service[HttpRequest, HttpResponse] {
+  val endpoint = (Get / ("shorten") / string /> shorten) | Get / string /> convert
+
+  val url = paramOption("url").withDefault("")
+
+  def shorten(path: String) = new Service[HttpRequest, HttpResponse] {
     def apply(req: HttpRequest) = for {
-      t <- title(req)
-    } yield Ok(s"Hello, $t $name!")
-  }
-  println("testing")
-
-  implicit val akkaSystem = akka.actor.ActorSystem()
-
-  val redis = RedisClient()
-
-  val futurePong = redis.ping()
-  println("Ping sent!")
-  futurePong.map(pong => {
-    println(s"Redis replied with a $pong")
-  })
-
-  scala.concurrent.Await.result(futurePong, 5 seconds)
-
-  val futureResult = doSomething(redis)
-
-  scala.concurrent.Await.result(futureResult, 5 seconds)
-
-  akkaSystem.shutdown()
-
-  def doSomething(redis: RedisClient): Future[Boolean] = {
-    // launch command set and del in parallel
-    val s = redis.set("redis", "is awesome")
-    val d = redis.del("i")
-    for {
-      set <- s
-      del <- d
-      incr <- redis.incr("i")
-      iBefore <- redis.get("i")
-      incrBy20 <- redis.incrby("i", 20)
-      iAfter <- redis.get("i")
+      u <- url(req)
     } yield {
-      println("SET redis \"is awesome\"")
-      println("DEL i")
-      println("INCR i")
-      println("INCRBY i 20")
-      val ibefore = iBefore.map(_.utf8String)
-      val iafter = iAfter.map(_.utf8String)
-      println(s"i was $ibefore, now is $iafter")
-      iafter == "20"
+      val shortened = processUrl(u)
+      Ok(s"Received: $shortened")
+    }
+  }
+
+  def convert(encoded: String) = new Service[HttpRequest, HttpResponse] {
+    def apply(req: HttpRequest) = {
+      implicit val akkaSystem = akka.actor.ActorSystem()
+
+      val redis = RedisClient()
+
+      val futureResult = fetchShort(redis, encoded)
+
+      val url = scala.concurrent.Await.result(futureResult, 5 seconds)
+      Ok("redirect to: " + url).toFuture
+    }
+  }
+
+  def processUrl(url: String): String = {
+    val validator = new UrlValidator(List("http","https").toArray)
+    if(validator.isValid(url)) {
+      implicit val akkaSystem = akka.actor.ActorSystem()
+
+      val redis = RedisClient()
+
+      val futureResult = genShort(redis, url)
+
+      val newUrl = scala.concurrent.Await.result(futureResult, 5 seconds)
+
+      akkaSystem.shutdown()
+
+      baseDomain + newUrl
+    } else {
+      throw new Exception("The supplied url is invalid.")
+    }
+  }
+
+  def fetchShort(redis: RedisClient, encoded: String): Future[String] = {
+    for {
+      v <- redis.get(encoded)
+    } yield {
+      v.map(_.utf8String) mkString("")
+    }
+  }
+
+  def genShort(redis: RedisClient, url: String): Future[String] = {
+    for {
+      uniqId <- redis.incr("SHORTURLID")
+      val base62 = new Base62
+      val encoded = base62.encode(uniqId)
+      s <- redis.set(encoded.toString(), url)
+    } yield {
+      println("*** uniqId generated: " + uniqId)
+      println("*** uniqId encoded to: " + encoded)
+      encoded.toString()
     }
   }
 
