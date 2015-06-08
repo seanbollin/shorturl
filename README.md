@@ -1,3 +1,5 @@
+# ShortURL w/ Scala, Finch/Finagle, and Redis
+
 A proof of concept URL shortener written in Scala using Redis and Twitter's Finagle/Finch.
 
 To build fat jar: sbt assembly
