@@ -1,3 +1,4 @@
+package com.github.tototoshi.base62
 /*
  * Copyright 2013 Toshiyuki Takahashi
  *
