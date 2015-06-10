@@ -58,6 +58,7 @@ object Main extends App {
     def apply(req: HttpRequest) = for {
       u <- url(req)
     } yield {
+			println("- received: " + u.url)
       val shortened = processUrl(u.url)
       Created(io.finch.json.Json.obj("shorturl" -> shortened)) // Created is 201 response
     }
