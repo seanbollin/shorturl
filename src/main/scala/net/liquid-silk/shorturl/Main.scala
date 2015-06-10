@@ -89,6 +89,7 @@ object Main extends App {
     }
   }
 
+  // generate the shortened URL
   def processUrl(url: String): String = {
     val validator = new UrlValidator(List("http","https").toArray)
     if(validator.isValid(url)) {
