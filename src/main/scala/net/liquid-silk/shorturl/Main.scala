@@ -67,6 +67,8 @@ object Main extends App {
   // handle GET request for Base62 shortURL
   def convert(encoded: String) = new Service[HttpRequest, HttpResponse] {
     def apply(req: HttpRequest) = {
+			println("- expanding: " + encoded)
+
       implicit val akkaSystem = akka.actor.ActorSystem()
 
       val redis = RedisClient()
