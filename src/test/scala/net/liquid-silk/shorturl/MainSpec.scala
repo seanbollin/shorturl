@@ -14,7 +14,7 @@ import io.finch._
 
 class MainSpec extends FlatSpec with Matchers {
 
-  val api: Service[HttpRequest, HttpResponse] = Main.endpoint
+  val api: Service[HttpRequest, HttpResponse] = endpoint.serviceUrls
   val await = mkAwait(api)
 
   it should "respond with a 201 when posting a valid URL" in {

@@ -16,5 +16,6 @@ libraryDependencies ++= Seq(
   "commons-validator" % "commons-validator" % "1.4.0",
   "commons-beanutils" % "commons-beanutils" % "1.9.2",
   "io.argonaut" %% "argonaut" % "6.0.4",
-  "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+  "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
+	"com.typesafe" % "config" % "1.3.0"
 )

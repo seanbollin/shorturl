@@ -1,3 +1,10 @@
+/*
+ * Copyright 2015, by Sean Bollin.
+ *
+ * Simple test class for a Base62 convert.
+ *
+ */
+
 import org.scalatest._
 import com.github.tototoshi.base62._
 
